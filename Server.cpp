@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/03 12:01:18 by ahamini           #+#    #+#             */
-/*   Updated: 2025/12/16 15:50:26 by ahamini          ###   ########.fr       */
+/*   Updated: 2025/12/16 18:23:16 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,29 +74,33 @@ void	Server::start() {
 		for (int i = 0; i < nbr_fd; ++i) {
 			if (!g_signal)
 				break;
-			if (events[i].data.fd == _server_fdsocket) {
+			if (events[i].data.fd == _server_fdsocket)
 				accept_new_client();
-			}
-			else {
+			else
 				handle_client_data();
-			}
 		}
 	}
 }
 
 void	Server::accept_new_client() {
-	int	client_fd;
 	struct sockaddr_in address_client;
 	socklen_t client_len = sizeof(address_client);
-	std::memset(&address_client, 0, sizeof(address_client));
-	client_fd = accept(_server_fdsocket, (struct sockaddr *)&address_client, &client_len);
+	while (true) {
+		std::memset(&address_client, 0, sizeof(address_client));
+		int client_fd = accept(_server_fdsocket, (struct sockaddr *)&address_client, &client_len);
 
-	if (client_fd == - 1) {
-		std::cerr << RED << "Error : accept() function failed : " << strerror(errno) << std::endl;
-		return;
+		if (client_fd == - 1) {
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+				break;
+			std::cerr << RED << "Error : accept() function failed : " << strerror(errno) << std::endl;
+			break;
+		}
+		if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1) {
+			std::cerr << RED << "Error: fcntl() function failed for client fd " << client_fd << NC << std::endl;
+			close(client_fd);
+			continue;;
+		}
 	}
-	
-
 }
 
 void	Server::handle_client_data() {
