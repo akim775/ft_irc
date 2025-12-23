@@ -6,12 +6,12 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/03 14:53:30 by ahamini           #+#    #+#             */
-/*   Updated: 2025/12/10 14:55:09 by ahamini          ###   ########.fr       */
+/*   Updated: 2025/12/23 11:32:41 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef FT_IRC_HPP
-#define FT_IRC_HPP
+#ifndef SERVER_HPP
+#define SERVER_HPP
 
 #include <iostream>
 #include <string>
@@ -30,9 +30,11 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/epoll.h>
+#include "Client.hpp"
 #include "colors.hpp"
 
 #define MAX_EVENTS 128
+#define BUFFER_SIZE 4096
 
 class Server {
 	private:
@@ -40,6 +42,7 @@ class Server {
 		std::string	_password;
 		int	_server_fdsocket;
 		int	_epoll_fd;
+		std::map<int, Client> _clients;
 
 	public:
 		Server(int port, std::string &password);
@@ -47,11 +50,13 @@ class Server {
 
 		void	initialize_socket();
 		void	setup_epoll();
+		void	add_fd_to_epoll(int fd);
 		void	start();
-	private:
+		private:
 		void	accept_new_client();
-		void	handle_client_data();
-};
+		void	handle_client_data(int fd);
+		void	onClientDisconnect(int fd);
+	};
 
 extern volatile bool g_signal;
 
