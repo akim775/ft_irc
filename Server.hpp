@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/03 14:53:30 by ahamini           #+#    #+#             */
-/*   Updated: 2025/12/23 11:32:41 by ahamini          ###   ########.fr       */
+/*   Updated: 2025/12/24 15:45:37 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,9 @@ class Server {
 		int	_server_fdsocket;
 		int	_epoll_fd;
 		std::map<int, Client> _clients;
+		void	cmd_parsing(int fd, const std::string &command_line);
+		void	cmd_pass(int fd, const std::vector<std::string> &args);
+
 
 	public:
 		Server(int port, std::string &password);

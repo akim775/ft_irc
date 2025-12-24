@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/03 12:01:18 by ahamini           #+#    #+#             */
-/*   Updated: 2025/12/23 15:15:18 by ahamini          ###   ########.fr       */
+/*   Updated: 2025/12/24 15:47:21 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,15 @@ volatile bool g_signal = true;
 Server::Server(int port, std::string &password) : _port(port), _password(password), _server_fdsocket(-1), _epoll_fd(-1) {
 	std::cout << BLUE << "Server constructor with parameters called" << NC << std::endl;
 	(void)_port;
-	(void)_epoll_fd;
+	_cmds["PASS"] = &Server::cmd_password;
+	/*_cmds["NICK"] = &Server::cmd_nick;
+	_cmds["USER"] = &Server::cmd_username;
+	_cmds["JOIN"] = &Server::cmd_join;
+	_cmds["PRIVMSG"] = &Server::cmd_prvmsg;
+	_cmds["KICK"] = &Server::cmd_kick;
+	_cmds["INVITE"] = &Server::cmd_invite;
+	_cmds["TOPIC"] = &Server::cmd_topic;
+	_cmds["MODE"] = &Server::cmd_mode;*/
 }
 
 Server::~Server() {
@@ -160,17 +168,18 @@ void	Server::handle_client_data(int fd) {
 	size_t pos;
 	while ((pos = filled_data.find('\n')) != std::string::npos) {
 		
-		std::string command_line = filled_data.substr(0, pos);
+		std::string cmd_line = filled_data.substr(0, pos);
 		filled_data.erase(0, pos + 1);
-		if (!command_line.empty() && command_line[command_line.size() - 1] == '\r') {
-			command_line.erase(command_line.size() - 1);
+		if (!cmd_line.empty() && cmd_line[cmd_line.size() - 1] == '\r') {
+			cmd_line.erase(cmd_line.size() - 1);
 		}
-		if (!command_line.empty()) {
-			std::cout << "[CLIENT " << fd << "] : " << command_line << std::endl;
-			// execute_command(fd, command_line);
+		if (!cmd_line.empty()) {
+			std::cout << "[CLIENT " << fd << "] : " << cmd_line << std::endl;
+			cmd_parsing(fd, cmd_line);
 		}
 		if (_clients.find(fd) == _clients.end()) {
 			return;
 		}
 	}
 }
+
