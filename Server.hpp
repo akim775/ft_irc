@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/03 14:53:30 by ahamini           #+#    #+#             */
-/*   Updated: 2025/12/24 15:45:37 by ahamini          ###   ########.fr       */
+/*   Updated: 2025/12/25 16:27:13 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,11 @@
 
 #define MAX_EVENTS 128
 #define BUFFER_SIZE 4096
+#define NOT_ENOUGH_PARAM 461
+#define ALREADY_REGISTERED 462
+#define BAD_PASSWORD 464
+
+
 
 class Server {
 	private:
@@ -45,6 +50,8 @@ class Server {
 		std::map<int, Client> _clients;
 		void	cmd_parsing(int fd, const std::string &command_line);
 		void	cmd_pass(int fd, const std::vector<std::string> &args);
+		std::map<std::string, void (Server::*)(int, const std::vector<std::string>&)> _cmds;
+		std::vector<std::string> Server::splitMessage(std::string input);
 
 
 	public:
@@ -59,6 +66,7 @@ class Server {
 		void	accept_new_client();
 		void	handle_client_data(int fd);
 		void	onClientDisconnect(int fd);
+
 	};
 
 extern volatile bool g_signal;
