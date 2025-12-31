@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:17:54 by ahamini           #+#    #+#             */
-/*   Updated: 2025/12/23 15:07:54 by ahamini          ###   ########.fr       */
+/*   Updated: 2025/12/30 15:43:28 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,18 +18,37 @@
 class Client {
 	private:
 		int	_fd;
-		std::string	_ip_address;
+		bool		_hasGivenPassword;
+		bool		_isRegistered;
 		std::string	_nickname;
+		std::string _realname;
 		std::string	_username;
+		std::string	_ip_address;
 		std::string	_buffer;
 
 	public:
-		Client() : _fd(-1) {};
-		Client(int fd, struct sockaddr_in addr) : _fd(fd) {
-			(void)_fd;
-			this->_ip_address = inet_ntoa(addr.sin_addr);
-		};
-		std::string & getBuffer() { return _buffer; }
+		Client();
+		Client(int fd, struct sockaddr_in addr);
+		
+		// Setters
+		void	setHasGivenPassword(bool value);
+		void	setIsRegistered(bool value);
+		void	setNickname(std::string const &nickname);
+		void	setUsername(std::string const &user);
+		void	setRealname(std::string const &real);
+		void	setFd(int fd);
+
+		// Getters
+		std::string	& getBuffer() { return _buffer; }
+		std::string	getNickname() const;
+		std::string	getIPAdress() const;
+		std::string	getUsername() const;
+		std::string	getRealname() const;
+		bool		hasGivenPassword() const;
+		bool		isRegistered() const;
+		int		getFd() const;
+		
+		
 };
 
 #endif

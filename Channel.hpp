@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:03:28 by ahamini           #+#    #+#             */
-/*   Updated: 2025/12/30 17:19:22 by ahamini          ###   ########.fr       */
+/*   Updated: 2025/12/31 10:12:04 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,12 +21,13 @@ class Channel
 private:
 	std::string _name;
 	std::string _topic;
-	std::string _password;
+	std::string _key;
 	std::vector<Client> _clients;
 	std::vector<Client> _operators;
 
 public:
-	
+	Channel();
+	Channel(std::string name, std::string key, Client *admin);
 };
 
 #endif

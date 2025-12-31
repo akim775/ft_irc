@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/03 14:53:30 by ahamini           #+#    #+#             */
-/*   Updated: 2025/12/25 16:27:13 by ahamini          ###   ########.fr       */
+/*   Updated: 2025/12/31 15:27:29 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,13 +31,14 @@
 #include <fcntl.h>
 #include <sys/epoll.h>
 #include "Client.hpp"
+#include "Channel.hpp"
 #include "colors.hpp"
 
 #define MAX_EVENTS 128
 #define BUFFER_SIZE 4096
-#define NOT_ENOUGH_PARAM 461
-#define ALREADY_REGISTERED 462
-#define BAD_PASSWORD 464
+#define ERR_NEEDMOREPARAMS 461
+#define ERR_ALREADYREGISTERED 462
+#define ERR_PASSWDMISMATCH 464
 
 
 
@@ -49,9 +50,16 @@ class Server {
 		int	_epoll_fd;
 		std::map<int, Client> _clients;
 		void	cmd_parsing(int fd, const std::string &command_line);
-		void	cmd_pass(int fd, const std::vector<std::string> &args);
+		void	cmd_password(int fd, const std::vector<std::string> &args);
+		void	cmd_nickname(int fd, const std::vector<std::string> &args);
+		void	cmd_username(int fd, const std::vector<std::string> &args);
+		void	cmd_prvmsg(int fd, const std::vector<std::string> &args);
+		void	cmd_join(int fd, const std::vector<std::string> &args);
+		Client *getClientByNickname(const std::string &nickname);
+		
 		std::map<std::string, void (Server::*)(int, const std::vector<std::string>&)> _cmds;
-		std::vector<std::string> Server::splitMessage(std::string input);
+		std::map<std::string, Channel *> _channels;
+		std::vector<std::string> splitMessage(std::string input);
 
 
 	public:
@@ -66,7 +74,14 @@ class Server {
 		void	accept_new_client();
 		void	handle_client_data(int fd);
 		void	onClientDisconnect(int fd);
+		void	sendResponse(int fd, std::string response);
+		bool	isNickInUse(std::string const &nick);
+		bool	isValidNickname(const std::string& nick);
+		void	sendWelcome(int fd);
 
+		// Getters
+
+		Channel	*getChannel(const std::string &name);
 	};
 
 extern volatile bool g_signal;

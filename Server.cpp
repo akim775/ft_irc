@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/03 12:01:18 by ahamini           #+#    #+#             */
-/*   Updated: 2025/12/24 15:47:21 by ahamini          ###   ########.fr       */
+/*   Updated: 2025/12/30 17:24:21 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,11 +18,11 @@ Server::Server(int port, std::string &password) : _port(port), _password(passwor
 	std::cout << BLUE << "Server constructor with parameters called" << NC << std::endl;
 	(void)_port;
 	_cmds["PASS"] = &Server::cmd_password;
-	/*_cmds["NICK"] = &Server::cmd_nick;
+	_cmds["NICK"] = &Server::cmd_nickname;
 	_cmds["USER"] = &Server::cmd_username;
-	_cmds["JOIN"] = &Server::cmd_join;
 	_cmds["PRIVMSG"] = &Server::cmd_prvmsg;
-	_cmds["KICK"] = &Server::cmd_kick;
+	_cmds["JOIN"] = &Server::cmd_join;
+	/*_cmds["KICK"] = &Server::cmd_kick;
 	_cmds["INVITE"] = &Server::cmd_invite;
 	_cmds["TOPIC"] = &Server::cmd_topic;
 	_cmds["MODE"] = &Server::cmd_mode;*/
