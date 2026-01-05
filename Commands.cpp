@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 15:46:43 by ahamini           #+#    #+#             */
-/*   Updated: 2025/12/31 15:47:58 by ahamini          ###   ########.fr       */
+/*   Updated: 2026/01/05 17:14:20 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,8 +136,15 @@ void	Server::cmd_join(int fd, const std::vector<std::string> &args) {
 	std::stringstream			ss(args[0]);
 	std::string					token;
 
-	while (std::getline(ss, token, ','))
-		channelNames.push_back(token);
+	while (std::getline(ss, token, ',')) {
+		if (!token.empty() && token.size() < 200 && 
+			token.find(' ') == std::string::npos &&
+			token.find(',') == std::string::npos &&
+			token.find('\x07') == std::string::npos)
+			channelNames.push_back(token);
+		else
+			sendResponse(fd, "localhost 403 " + client->getNickname() + ":No such channel\r\n");
+	}
 
 	if (args.size() > 1) {
 		std::stringstream	ssKey(args[1]);
@@ -152,18 +159,37 @@ void	Server::cmd_join(int fd, const std::vector<std::string> &args) {
 			actualKey = channelKeys[i];
 		else
 			actualKey = "";
-		
-		if (actualChannel[0] != '#' || actualChannel[0] != '&') {
-			sendResponse(fd, "localhost 403" + actualChannel + ":No such channel\r\n");
+		if (actualChannel[0] != '#' && actualChannel[0] != '&') {
+			sendResponse(fd, "localhost 403 " + client->getNickname() + actualChannel + ":No such channel\r\n");
 			continue;
 		}
 
 		Channel *channel = getChannel(actualChannel);
 
+		if (channel && channel->isMember(client))
+			continue;
+		if (client->getNbChannels() >= 10) {
+			std::string err = ":localhost 405 " + client->getNickname() + " " + actualChannel + " :You have joined too many channels\r\n";
+			sendResponse(fd, err);
+			continue;
+		}
 		if (!channel) {
+			std::cout << "DEBUG JOIN: Création de " << actualChannel << " avec Key=[" << actualKey << "]" << std::endl;
 			channel = new Channel(actualChannel, actualKey, client);
 			_channels[actualChannel] = channel;
+			client->addChannel(actualChannel);
+		} else {
+			if (channel->isMember(client))
+				continue;
+			if (!channel->getKey().empty() && channel->getKey() != actualKey) {
+				sendResponse(fd, ":localhost 475 " + client->getNickname() + " " + actualChannel + " :Cannot join channel (+k)\r\n");
+				continue;
+			}
+			channel->addClient(client);
+			client->addChannel(actualChannel);
 		}
+		std::string joinMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getIPAdress() + " JOIN " + actualChannel + "\r\n";
+		channel->broadcast(joinMsg, -1);
 	}
 }
 
@@ -195,17 +221,34 @@ void	Server::cmd_prvmsg(int fd, const std::vector<std::string> &args) {
 	std::string clientTarget;
 
 	while (std::getline(ss, clientTarget, ',')) {
-		// TODO IF CHANNEL
-		Client	*recipient = getClientByNickname(clientTarget);
-		if (recipient) {
+		if (clientTarget[0] == '#' || clientTarget[0] == '&') {
+			Channel *chan = getChannel(clientTarget);
+
+			if (!chan) {
+				sendResponse(fd, ":localhost 403 " + client->getNickname() + " " + clientTarget + " :No such channel\r\n");
+				continue;
+			}
+			if (!chan->isMember(client)) {
+				sendResponse(fd, ":localhost 404 " + client->getNickname() + " " + clientTarget + " :Cannot send to channel\r\n");
+				continue;
+			}
 			std::string fullMessage = ":" + client->getNickname() + "!" 
-										+ client->getUsername() + "@" + client->getIPAdress() 
-										+ " PRIVMSG " + clientTarget + " :" + message + "\r\n";
-			sendResponse(recipient->getFd(), fullMessage);
+									+ client->getUsername() + "@" + client->getIPAdress() 
+									+ " PRIVMSG " + clientTarget + " :" + message + "\r\n";
+			chan->broadcast(fullMessage, fd);
 		}
 		else {
-			std::string err = ":localhost 401 " + clientTarget + ":No such nick/channel\r\n";
-			sendResponse(fd, err);
+			Client	*recipient = getClientByNickname(clientTarget);
+			if (recipient) {
+				std::string fullMessage = ":" + client->getNickname() + "!" 
+											+ client->getUsername() + "@" + client->getIPAdress() 
+											+ " PRIVMSG " + clientTarget + " :" + message + "\r\n";
+				sendResponse(recipient->getFd(), fullMessage);
+			}
+			else {
+				std::string err = ":localhost 401 " + clientTarget + ":No such nick/channel\r\n";
+				sendResponse(fd, err);
+			}
 		}
 	}
 }

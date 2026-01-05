@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/03 12:01:18 by ahamini           #+#    #+#             */
-/*   Updated: 2025/12/30 17:24:21 by ahamini          ###   ########.fr       */
+/*   Updated: 2026/01/05 15:29:25 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,9 @@ Server::Server(int port, std::string &password) : _port(port), _password(passwor
 }
 
 Server::~Server() {
+	for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
+		delete it->second;
+	}
 	for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
 		
 		int fd_client = it->first;
@@ -173,7 +176,7 @@ void	Server::handle_client_data(int fd) {
 		if (!cmd_line.empty() && cmd_line[cmd_line.size() - 1] == '\r') {
 			cmd_line.erase(cmd_line.size() - 1);
 		}
-		if (!cmd_line.empty()) {
+		if (!cmd_line.empty() && cmd_line.size() <= 510) {
 			std::cout << "[CLIENT " << fd << "] : " << cmd_line << std::endl;
 			cmd_parsing(fd, cmd_line);
 		}

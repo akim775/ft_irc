@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:17:54 by ahamini           #+#    #+#             */
-/*   Updated: 2025/12/30 15:43:28 by ahamini          ###   ########.fr       */
+/*   Updated: 2026/01/05 16:16:14 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ class Client {
 		std::string	_username;
 		std::string	_ip_address;
 		std::string	_buffer;
+		std::vector<std::string>	_joinedChannels;
 
 	public:
 		Client();
@@ -46,9 +47,11 @@ class Client {
 		std::string	getRealname() const;
 		bool		hasGivenPassword() const;
 		bool		isRegistered() const;
-		int		getFd() const;
-		
-		
+		int			getFd() const;
+		void		addChannel(const std::string& channelName);
+		void		removeChannel(const std::string& channelName);
+		size_t		getNbChannels() const;
+		const std::vector<std::string>& getJoinedChannels() const;
 };
 
 #endif

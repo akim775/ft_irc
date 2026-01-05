@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/03 14:53:30 by ahamini           #+#    #+#             */
-/*   Updated: 2025/12/31 15:27:29 by ahamini          ###   ########.fr       */
+/*   Updated: 2026/01/05 15:21:46 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,12 +35,12 @@
 #include "colors.hpp"
 
 #define MAX_EVENTS 128
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 512
 #define ERR_NEEDMOREPARAMS 461
 #define ERR_ALREADYREGISTERED 462
 #define ERR_PASSWDMISMATCH 464
 
-
+class Channel;
 
 class Server {
 	private:

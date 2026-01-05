@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:17:52 by ahamini           #+#    #+#             */
-/*   Updated: 2025/12/30 15:42:59 by ahamini          ###   ########.fr       */
+/*   Updated: 2026/01/05 16:16:16 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,4 +76,23 @@ bool Client::isRegistered() const {
 
 int	Client::getFd() const {
 	return this->_fd;
+}
+
+void Client::addChannel(const std::string& channelName) {
+	_joinedChannels.push_back(channelName);
+}
+
+void Client::removeChannel(const std::string& channelName) {
+	std::vector<std::string>::iterator it = std::find(_joinedChannels.begin(), _joinedChannels.end(), channelName);
+	if (it != _joinedChannels.end()) {
+		_joinedChannels.erase(it);
+	}
+}
+
+size_t Client::getNbChannels() const {
+	return _joinedChannels.size();
+}
+
+const std::vector<std::string>& Client::getJoinedChannels() const {
+	return _joinedChannels;
 }
