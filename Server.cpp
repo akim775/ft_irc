@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/03 12:01:18 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/05 15:29:25 by ahamini          ###   ########.fr       */
+/*   Updated: 2026/01/06 10:40:08 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,24 +121,23 @@ void	Server::start() {
 void	Server::accept_new_client() {
 	struct sockaddr_in address_client;
 	socklen_t client_len = sizeof(address_client);
-	while (true) {
-		std::memset(&address_client, 0, sizeof(address_client));
-		int client_fd = accept(_server_fdsocket, (struct sockaddr *)&address_client, &client_len);
 
-		if (client_fd == - 1) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
-				break;
+	std::memset(&address_client, 0, sizeof(address_client));
+	
+	int client_fd = accept(_server_fdsocket, (struct sockaddr *)&address_client, &client_len);
+
+	if (client_fd == - 1) {
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			std::cerr << RED << "Error : accept() function failed : " << strerror(errno) << std::endl;
-			break;
-		}
-		if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1) {
-			std::cerr << RED << "Error: fcntl() function failed for client fd " << client_fd << " : " << strerror(errno) << NC << std::endl;
-			close(client_fd);
-			continue;;
-		}
-		_clients.insert(std::make_pair(client_fd, Client(client_fd, address_client)));
-		add_fd_to_epoll(client_fd);
+		return;
 	}
+	if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1) {
+		std::cerr << RED << "Error: fcntl() function failed for client fd " << client_fd << " : " << strerror(errno) << NC << std::endl;
+		close(client_fd);
+		return;
+	}
+	_clients.insert(std::make_pair(client_fd, Client(client_fd, address_client)));
+	add_fd_to_epoll(client_fd);
 }
 
 void	Server::handle_client_data(int fd) {
