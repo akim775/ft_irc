@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 15:46:43 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/05 17:14:20 by ahamini          ###   ########.fr       */
+/*   Updated: 2026/01/06 01:52:59 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -168,19 +168,17 @@ void	Server::cmd_join(int fd, const std::vector<std::string> &args) {
 
 		if (channel && channel->isMember(client))
 			continue;
-		if (client->getNbChannels() >= 10) {
+		if (client->getNbChannels() > 10) {
 			std::string err = ":localhost 405 " + client->getNickname() + " " + actualChannel + " :You have joined too many channels\r\n";
 			sendResponse(fd, err);
 			continue;
 		}
 		if (!channel) {
 			std::cout << "DEBUG JOIN: Création de " << actualChannel << " avec Key=[" << actualKey << "]" << std::endl;
-			channel = new Channel(actualChannel, actualKey, client);
+			channel = new Channel(actualChannel, "", client);
 			_channels[actualChannel] = channel;
 			client->addChannel(actualChannel);
 		} else {
-			if (channel->isMember(client))
-				continue;
 			if (!channel->getKey().empty() && channel->getKey() != actualKey) {
 				sendResponse(fd, ":localhost 475 " + client->getNickname() + " " + actualChannel + " :Cannot join channel (+k)\r\n");
 				continue;
@@ -190,6 +188,23 @@ void	Server::cmd_join(int fd, const std::vector<std::string> &args) {
 		}
 		std::string joinMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getIPAdress() + " JOIN " + actualChannel + "\r\n";
 		channel->broadcast(joinMsg, -1);
+
+		if (!channel->getTopic().empty())
+			sendResponse(fd, ":localhost 332 " + client->getNickname() + " " + actualChannel + " :" + channel->getTopic() + "\r\n");
+		else
+			sendResponse(fd, ":localhost 331 " + client->getNickname() + " " + actualChannel + " :No topic is set\r\n");
+		std::string userList = "";
+        std::vector<Client *> clientsInChan = channel->getClients(); 
+        for (size_t j = 0; j < clientsInChan.size(); j++) {
+            if (channel->isOperator(clientsInChan[j]))
+                userList += "@";
+            userList += clientsInChan[j]->getNickname();
+            if (j < clientsInChan.size() - 1)
+                userList += " ";
+        }
+        
+        sendResponse(fd, ":localhost 353 " + client->getNickname() + " = " + actualChannel + " :" + userList + "\r\n");
+        sendResponse(fd, ":localhost 366 " + client->getNickname() + " " + actualChannel + " :End of /NAMES list.\r\n");
 	}
 }
 

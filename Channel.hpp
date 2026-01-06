@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:03:28 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/05 14:03:18 by ahamini          ###   ########.fr       */
+/*   Updated: 2026/01/06 01:03:45 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,15 +33,18 @@ public:
 	// Getters
 	std::string	getName();
 	std::string	getKey();
-
+	std::string	getTopic() const;
+    std::vector<Client *>	getClients() const;
+	
 	// Setters
 	void	setKey(std::string key);
-
+	
 	void	addClient(Client *newClient);
 	void	addOperator(Client *newAdmin);
 	void	removeClient(int fd);
 	void	broadcast(const std::string &message, int excludeFd = -1);
 	bool	isMember(Client *client);
+	bool	isOperator(Client *client) const;
 };
 
 #endif

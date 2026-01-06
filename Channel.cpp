@@ -6,7 +6,7 @@
 /*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:03:31 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/05 14:02:50 by ahamini          ###   ########.fr       */
+/*   Updated: 2026/01/06 01:52:47 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ void	Channel::addOperator(Client *newOperator) {
 		if (_operators[i]->getFd() == newOperator->getFd())
 			return;
 	}
-	_clients.push_back(newOperator);
+	_operators.push_back(newOperator);
 }
 
 void Channel::removeClient(int fd) {
@@ -88,4 +88,21 @@ std::string	Channel::getKey() {
 
 void	Channel::setKey(std::string key) {
 	_key = key;
+}
+
+std::string Channel::getTopic() const {
+	return this->_topic;
+}
+
+std::vector<Client *> Channel::getClients() const {
+	return this->_clients;
+}
+
+bool Channel::isOperator(Client *client) const {
+	for (size_t i = 0; i < _operators.size(); i++) {
+		if (_operators[i] == client) {
+			return true;
+		}
+	}
+	return false;
 }
