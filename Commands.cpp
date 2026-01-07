@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Commands.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ilsadi <ilsadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 15:46:43 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/06 01:52:59 by ahamini          ###   ########.fr       */
+/*   Updated: 2026/01/07 20:28:44 by ilsadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -414,4 +414,244 @@ void Server::cmd_parsing(int fd, const std::string &cmd_line) {
 	} else {
 		std::cerr << "Unknown command : " << cmdName << std::endl;
 	}
+}
+
+void Server::cmd_quit(int fd, const std::vector<std::string> &args)
+{
+	if (_clients.find(fd) == _clients.end())
+		return ;
+	Client *client = &_clients[fd];
+	
+	std::string reason = "Client Quit";
+	if (!args.empty() && !args[0].empty())
+		reason = args[0];
+	std::string quitMsg = ":" + client->getNickname()
+		+ "!" + client->getUsername()
+		+ "@" + client->getIPAdress()
+		+ " QUIT :" + reason + "\r\n";
+		
+	std::vector<std::string> chans = client->getJoinedChannels();
+	for (size_t i = 0; i < chans.size(); i++)
+	{
+		Channel *ch = getChannel(chans[i]);
+		if (!ch)
+			continue;
+	
+		ch->broadcast(quitMsg, fd);
+		ch->removeClient(fd);
+		client->removeChannel(chans[i]);
+		if (ch->getClientCount() == 0)
+		{
+			_channels.erase(chans[i]);
+			delete ch;
+		}
+	}
+	onClientDisconnect(fd);
+}
+
+void Server::cmd_part(int fd, const std::vector<std::string> &args)
+{
+	Client *client = &_clients[fd];
+	
+	if (!client->isRegistered())
+	{
+		sendResponse(fd, ":localhost 451 :You have not registered\r\n");
+		return ;
+	}
+	if (args.empty() || args[0].empty())
+	{
+		sendResponse(fd, ":localhost 461 PART :Not enough parameters\r\n");
+		return ;
+	}
+	std::string channelName = args[0];
+	Channel *channel = getChannel(channelName);
+	if (!channel)
+	{
+		sendResponse(fd, ":localhost 403 " + client->getNickname() + " " + channelName + " :No such channel\r\n");
+		return ;
+	}
+	if (!channel->isMember(client))
+	{
+		sendResponse(fd, ":localhost 442 " + client->getNickname() + " " + channelName + " :You're not on that channel\r\n");
+		return ;
+	}
+	std::string reason = "";
+	if (args.size() > 1 && !args[1].empty())
+		reason = " :" + args[1];
+	std::string partMsg = ":" + client->getNickname()
+		+ "!" + client->getUsername()
+		+ "@" + client->getIPAdress()
+		+ " PART " + channelName + reason + "\r\n";
+	channel->broadcast(partMsg, -1);
+	channel->removeClient(fd);
+	client->removeChannel(channelName);
+	if (channel->getClientCount() == 0)
+	{
+		_channels.erase(channelName);
+		delete channel;
+	}
+}
+
+void Server::cmd_kick(int fd, const std::vector<std::string> &args)
+{
+	Client *kicker = &_clients[fd];
+
+	if (!kicker->isRegistered())
+	{
+		sendResponse(fd, ":localhost 451 :You have not registered\r\n");
+		return ;
+	}
+	if (args.size() < 2 || args[0].empty() || args[1].empty())
+	{
+		sendResponse(fd, ":localhost 461 KICK :Not enough parameters\r\n");
+		return ;
+	}
+	std::string channelName = args[0];
+	std::string targetNick = args[1];
+	Channel *channel = getChannel(channelName);
+	if (!channel)
+	{
+		sendResponse(fd, ":localhost 403 " + kicker->getNickname() + " " + channelName + " :No such channel\r\n");
+		return ;
+	}
+	if (!channel->isMember(kicker))
+	{
+		sendResponse(fd, "Localhost: 442 " + kicker->getNickname() + " " + channelName + " :You're not on that channel\r\n");
+		return ;
+	}
+	if (!channel->isOperator(kicker))
+	{
+		sendResponse(fd, ":localhost 482 " + kicker->getNickname() + " " + channelName + " :You're not channel operator\r\n");
+		return ;
+	}
+	Client *target = getClientByNickname(targetNick);
+	if (!target)
+	{
+		sendResponse(fd, ":localhost 401 " + kicker->getNickname() + " " + targetNick + " :No such nick/channel\r\n");
+		return ;
+	}
+	if (!channel->isMember(target))
+	{
+		sendResponse(fd, ":localhost 441 " + kicker->getNickname() + " " + targetNick + " " + channelName + " :They aren't on that channel\r\n");
+		return ;
+	}
+	std::string reason = "Kicked";
+	if (args.size() >= 3 && !args[2].empty())
+		reason = args[2];
+	std::string kickMsg = ":" + kicker->getNickname()
+		+ "!" + kicker->getUsername()
+		+ "@" + kicker->getIPAdress()
+		+ " KICK " + channelName + " " + targetNick + " :" + reason + "\r\n";
+	channel->broadcast(kickMsg, -1);
+	channel->removeClient(target->getFd());
+	target->removeChannel(channelName);
+	if (channel->getClientCount() == 0)
+	{
+		_channels.erase(channelName);
+		delete channel;
+	}
+}
+
+void Server::cmd_topic(int fd, const std::vector<std::string> &args)
+{
+	Client *client = &_clients[fd];
+	
+	if (!client->isRegistered())
+	{
+		sendResponse(fd, ":localhost 451 : You have not registered\r\n");
+		return ;
+	}
+	if (args.empty() || args[0].empty())
+	{
+		sendResponse(fd, ":localhost 461 TOPIC : Not enough parameters\r\n");
+		return ;
+	}
+	std::string channelName = args[0];
+	Channel *channel = getChannel(channelName);
+	if (!channel)
+	{
+		sendResponse(fd, ":localhost 403 " + client->getNickname() + " " + channelName + " :No such channel\r\n");
+		return;
+	}
+	if (!channel->isMember(client))
+	{
+		sendResponse(fd, ":localhost 442 " + client->getNickname() + " " + channelName + " :You're not on that channel\r\n");
+		return;
+	}
+	if (args.size() == 1)
+	{
+		std::string topic = channel->getTopic();
+		if (topic.empty())
+		{
+			sendResponse(fd, ":localhost 331 " + client->getNickname() + " " + channelName + " :No topic is set\r\n");
+		} else
+		{
+			sendResponse(fd, ":localhost 332 " + client->getNickname() + " " + channelName + " :" + topic + "\r\n");
+		}
+		return;
+	}
+	std::string newTopic = args[1];
+	channel->setTopic(newTopic);
+	sendResponse(fd, ":localhost NOTICE " + client->getNickname()
+		+ " :[DEBUG] topic set to: " + channel->getTopic() + "\r\n");
+	std::string topicMsg = ":" + client->getNickname()
+		+ "!" + client->getUsername()
+		+ "@" + client->getIPAdress()
+		+ " TOPIC " + channelName + " :" + newTopic + "\r\n";
+	channel->broadcast(topicMsg, -1);
+}
+
+void	Server::cmd_invite(int fd, const std::vector<std::string> & args)
+{
+	Client *invited = &_clients[fd];
+	
+	if (!invited->isRegistered())
+	{
+		sendResponse(fd, ":localhost 451 : You have not registered\r\n");
+		return ;
+	}
+	if (args.size() < 2)
+	{
+		sendResponse(fd, ":localhost 461 INVITE : Not enough parameters\r\n");
+		return ;
+	}
+	std::string	targetNick = args[0];
+	std::string channelName = args[1];
+
+	Channel *channel = getChannel(channelName);
+	if (!channel)
+	{
+		sendResponse(fd, ":localhost 403 " + invited->getNickname()
+			+ " " + channelName + " : No such channel\r\n");
+		return ;
+	}
+	if (!channel->isMember(invited))
+	{
+		sendResponse(fd, ":localhost 442 " + invited->getNickname()
+			+ " " + targetNick + " : You're not on that channel\r\n");
+		return ;
+	}
+	Client *target = getClientByNickname(targetNick);
+	if (!target)
+	{
+		sendResponse(fd, ":localhost 401 " + invited->getNickname()
+			+ " " + targetNick + " : No such nickname\r\n");
+		return ;
+	}
+	if (channel->isMember(target))
+	{
+		sendResponse(fd, ":localhost 443 " + invited->getNickname()
+			+ " " + targetNick + " " + channelName
+			+ " : is already on channel\r\n");
+		return ;
+	}
+	channel->inviteNick(targetNick);
+	
+	std::string inviteMsg = ":" + invited->getNickname()
+		+ "!" + invited->getUsername()
+		+ "@" + invited->getIPAdress()
+		+ " INVITE " + targetNick + " " + channelName + "\r\n";
+	sendResponse(target->getFd(), inviteMsg);
+	sendResponse(fd, ":localhost 341 " + invited->getNickname()
+		+ " " + targetNick + " " + channelName + "\r\n");
 }

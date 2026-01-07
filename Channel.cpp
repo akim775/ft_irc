@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ilsadi <ilsadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:03:31 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/06 01:52:47 by ahamini          ###   ########.fr       */
+/*   Updated: 2026/01/07 20:30:00 by ilsadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,19 @@ void	Channel::broadcast(const std::string &message, int excludeFd) {
 	}
 }
 
+void Channel::inviteNick(const std::string &nickname)
+{
+	if (!nickname.empty())
+		_invited.insert(nickname);
+}
+
+void Channel::revokeInvite(const std::string &nickname)
+{
+	std::set<std::string>::iterator it = _invited.find(nickname);
+	if (it != _invited.end())
+		_invited.erase(it);
+}
+
 bool Channel::isMember(Client *client) {
 	for (size_t i = 0; i < _clients.size(); i++) {
 		if (_clients[i]->getFd() == client->getFd())
@@ -82,11 +95,38 @@ bool Channel::isMember(Client *client) {
 	return false;
 }
 
-std::string	Channel::getKey() {
-	return _key;
+bool Channel::isOperator(Client *client)
+{
+	for (size_t i = 0; i < _operators.size(); i++)
+	{
+		if (_operators[i]->getFd() == client->getFd())
+			return (true);
+	}
+	return (false);
 }
 
-void	Channel::setKey(std::string key) {
+bool Channel::isInvited(const std::string &nickname) const
+{
+	return (_invited.find(nickname) != _invited.end());
+}
+
+std::string	Channel::getKey()
+{
+	return (_key);
+}
+
+std::string Channel::getTopic() const
+{
+	return (_topic);
+}
+
+std::string Channel::getName()
+{
+	return (_name);
+}
+
+void	Channel::setKey(std::string key)
+{
 	_key = key;
 }
 
@@ -105,4 +145,13 @@ bool Channel::isOperator(Client *client) const {
 		}
 	}
 	return false;
+
+void	Channel::setTopic(const std::string &topic)
+{
+	_topic = topic;
+}
+
+size_t Channel::getClientCount() const
+{
+	return _clients.size();
 }

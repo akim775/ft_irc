@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ilsadi <ilsadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:03:28 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/06 01:03:45 by ahamini          ###   ########.fr       */
+/*   Updated: 2026/01/07 20:28:24 by ilsadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,36 +15,40 @@
 
 #include "Server.hpp"
 #include "Client.hpp"
+#include <set>
 
 class Channel
 {
-private:
-	std::string _name;
-	std::string _topic;
-	std::string _key;
-	std::vector<Client *> _clients;
-	std::vector<Client *> _operators;
+	private:
+		std::string _name;
+		std::string _topic;
+		std::string _key;
+		std::set<std::string> _invited;
+		std::vector<Client *> _clients;
+		std::vector<Client *> _operators;
 
-public:
-	Channel();
-	Channel(std::string name, std::string key, Client *admin);
-	~Channel();
+	public:
+		Channel();
+		Channel(std::string name, std::string key, Client *admin);
+		~Channel();
 
-	// Getters
-	std::string	getName();
-	std::string	getKey();
-	std::string	getTopic() const;
-    std::vector<Client *>	getClients() const;
-	
-	// Setters
-	void	setKey(std::string key);
-	
-	void	addClient(Client *newClient);
-	void	addOperator(Client *newAdmin);
-	void	removeClient(int fd);
-	void	broadcast(const std::string &message, int excludeFd = -1);
-	bool	isMember(Client *client);
-	bool	isOperator(Client *client) const;
-};
+		// Getters
+		std::string	getName();
+		std::string	getKey();
+		size_t getClientCount() const;
+		std::string getTopic() const;
+		// Setters
+		void	setKey(std::string key);
+		void	setTopic(const std::string &topic);
 
+		void	addClient(Client *newClient);
+		void	addOperator(Client *newAdmin);
+		void	removeClient(int fd);
+		void	broadcast(const std::string &message, int excludeFd = -1);
+		bool	isMember(Client *client);
+		bool	isOperator(Client *client);
+		void	inviteNick(const std::string &nickname);
+		bool	isInvited(const std::string &nickname) const;
+		void	revokeInvite(const std::string &nickname);
+	};
 #endif

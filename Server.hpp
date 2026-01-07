@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ilsadi <ilsadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/03 14:53:30 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/05 15:21:46 by ahamini          ###   ########.fr       */
+/*   Updated: 2026/01/07 10:53:27 by ilsadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,6 +55,11 @@ class Server {
 		void	cmd_username(int fd, const std::vector<std::string> &args);
 		void	cmd_prvmsg(int fd, const std::vector<std::string> &args);
 		void	cmd_join(int fd, const std::vector<std::string> &args);
+		void	cmd_quit(int fd, const std::vector<std::string> &args);
+		void	cmd_part(int fd, const std::vector<std::string> &args);
+		void	cmd_kick(int fd, const std::vector<std::string> &args);
+		void	cmd_topic(int fd, const std::vector<std::string> &args);
+		void	cmd_invite(int fd, const std::vector<std::string> &args);
 		Client *getClientByNickname(const std::string &nickname);
 		
 		std::map<std::string, void (Server::*)(int, const std::vector<std::string>&)> _cmds;

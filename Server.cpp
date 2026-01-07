@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ilsadi <ilsadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/03 12:01:18 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/06 10:40:08 by ahamini          ###   ########.fr       */
+/*   Updated: 2026/01/07 20:29:01 by ilsadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,11 @@ Server::Server(int port, std::string &password) : _port(port), _password(passwor
 	_cmds["USER"] = &Server::cmd_username;
 	_cmds["PRIVMSG"] = &Server::cmd_prvmsg;
 	_cmds["JOIN"] = &Server::cmd_join;
+	_cmds["QUIT"] = &Server::cmd_quit;
+	_cmds["PART"] = &Server::cmd_part;
+	_cmds["KICK"] = &Server::cmd_kick;
+	_cmds["TOPIC"] = &Server::cmd_topic;
+	_cmds["INVITE"] = &Server::cmd_invite;
 	/*_cmds["KICK"] = &Server::cmd_kick;
 	_cmds["INVITE"] = &Server::cmd_invite;
 	_cmds["TOPIC"] = &Server::cmd_topic;
@@ -155,7 +160,10 @@ void	Server::handle_client_data(int fd) {
 	ssize_t bytes_read = recv(fd, buffer, sizeof(buffer) - 1, 0);
 	if (bytes_read <= 0) {
 		if (bytes_read == 0) {
-			onClientDisconnect(fd);
+			std::vector<std::string> args;
+			args.push_back("Client disconnected");
+			cmd_quit(fd, args);
+			return ;
 		}
 		else {
 			if (errno != EAGAIN && errno != EWOULDBLOCK) {
