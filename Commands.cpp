@@ -6,7 +6,7 @@
 /*   By: ilsadi <ilsadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 15:46:43 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/08 17:01:47 by ilsadi           ###   ########.fr       */
+/*   Updated: 2026/01/08 21:52:13 by ilsadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -178,12 +178,25 @@ void	Server::cmd_join(int fd, const std::vector<std::string> &args) {
 			channel = new Channel(actualChannel, "", client);
 			_channels[actualChannel] = channel;
 			client->addChannel(actualChannel);
-		} else {
+		} else
+		{
+			if (channel->isInviteOnly() && !channel->isInvited(client->getNickname()))
+			{
+				sendResponse(fd, ":localhost 473 " + client->getNickname() + " " + actualChannel + " :Cannot join channel (+i)\r\n");
+				continue;
+			}
+
 			if (!channel->getKey().empty() && channel->getKey() != actualKey) {
 				sendResponse(fd, ":localhost 475 " + client->getNickname() + " " + actualChannel + " :Cannot join channel (+k)\r\n");
 				continue;
 			}
+			if (channel->getUserLimit() > 0 && (int)channel->getClients().size() >= channel->getUserLimit())
+			{
+				sendResponse(fd, ":localhost 471 " + client->getNickname() + " " + actualChannel + " :Cannot join channel (+l)\r\n");
+				continue;
+			}
 			channel->addClient(client);
+			channel->revokeInvite(client->getNickname());
 			client->addChannel(actualChannel);
 		}
 		std::string joinMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getIPAdress() + " JOIN " + actualChannel + "\r\n";
@@ -590,6 +603,11 @@ void Server::cmd_topic(int fd, const std::vector<std::string> &args)
 		}
 		return;
 	}
+	if (channel->isTopicRestricted() && !channel->isOperator(client))
+	{
+		sendResponse(fd, ":localhost 482 " + client->getNickname() + " " + channelName + " :You're not channel operator\r\n");
+		return ;
+	}
 	std::string newTopic = args[1];
 	channel->setTopic(newTopic);
 	sendResponse(fd, ":localhost NOTICE " + client->getNickname()
@@ -654,4 +672,188 @@ void	Server::cmd_invite(int fd, const std::vector<std::string> & args)
 	sendResponse(target->getFd(), inviteMsg);
 	sendResponse(fd, ":localhost 341 " + invited->getNickname()
 		+ " " + targetNick + " " + channelName + "\r\n");
+}
+
+void Server::cmd_mode(int fd, const std::vector<std::string> &args)
+{
+	Client *client = &_clients[fd];
+
+	if (!client->isRegistered())
+	{
+		sendResponse(fd, ":localhost 451 :You have not registered\r\n");
+		return ;
+	}
+	if (args.size() < 1)
+	{
+		sendResponse(fd, ":localgost 461 MODE :Not enough parameters\r\n");
+		return ;
+	}
+	std::string channelName = args[0];
+	Channel *channel = getChannel(channelName);
+	if (!channel)
+	{
+		sendResponse(fd, ":localhost 403 " + client->getNickname() + " " + channelName + " :No such channel\r\n");
+		return ;
+	}
+	if (!channel->isMember(client))
+	{
+		sendResponse(fd, ":localhost 442 " + client->getNickname() + " " + channelName + " :You're not on that channel\r\n");
+		return ;
+	}
+	if (args.size() == 1)
+	{
+		std::string modes = "+";
+		if (channel->isInviteOnly())
+			modes += "i";
+		if (channel->isTopicRestricted())
+    		modes += "t";
+		if (!channel->getKey().empty())
+			modes += "k";
+		if (channel->getUserLimit() > 0)
+			modes += "l";
+
+		sendResponse(fd, ":localhost 324 " + client->getNickname() + " " + channelName + " " + modes
+			+ (channel->getKey().empty() ? "" : " " + channel->getKey()) + "\r\n");
+		return ;
+	}
+	if (!channel->isOperator(client))
+	{
+		sendResponse(fd, ":localhost 482 " + client->getNickname() + " " + channelName + " :You're not channel operator\r\n");
+		return ;
+	}
+	std::string modeStr = args[1];
+	char sign = '+';
+	size_t argIndex = 2;
+
+	std::string appliedModes;
+	std::vector<std::string> appliedArgs;
+
+	for (size_t i = 0; i < modeStr.size(); i++)
+	{
+		char c = modeStr[i];
+
+		if (c == '+' || c == '-')
+		{
+			sign = c;
+			appliedModes += c;
+			continue;
+		}
+
+		if (c == 'i')
+		{
+			channel->setInviteOnly(sign == '+');
+			appliedModes += 'i';
+		}
+		else if (c == 't')
+		{
+			channel->setTopicRestricted(sign == '+');
+			appliedModes += 't';
+		}
+		else if (c == 'k')
+		{
+			if (sign == '+')
+			{
+				if (argIndex >= args.size())
+				{
+					sendResponse(fd, ":localhost 461 MODE :Not enough parameters\r\n");
+					return;
+				}
+				channel->setKey(args[argIndex]);
+				appliedModes += 'k';
+				appliedArgs.push_back(args[argIndex]);
+				argIndex++;
+			}
+			else
+			{
+				channel->setKey("");
+				appliedModes += 'k';
+			}
+		}
+		else if (c == 'o')
+		{
+			if (argIndex >= args.size())
+			{
+				sendResponse(fd, ":localhost 461 MODE :Not enough parameters\r\n");
+				return;
+			}
+
+			std::string targetNick = args[argIndex++];
+			Client *target = getClientByNickname(targetNick);
+
+			if (!target)
+			{
+				sendResponse(fd, ":localhost 401 " + client->getNickname() + " " + targetNick + " :No such nick\r\n");
+				return;
+			}
+			if (!channel->isMember(target))
+			{
+				sendResponse(fd, ":localhost 441 " + client->getNickname() + " " + targetNick + " " + channelName + " :They aren't on that channel\r\n");
+				return;
+			}
+
+			if (sign == '+')
+				channel->addOperator(target);
+			else
+				channel->removeOperator(target->getFd());
+
+			appliedModes += 'o';
+			appliedArgs.push_back(targetNick);
+		}
+		else if (c == 'l')
+		{
+			if (sign == '+')
+			{
+				if (argIndex >= args.size())
+				{
+					sendResponse(fd, ":localhost 461 MODE :Not enough parameters\r\n");
+					return;
+				}
+
+				// check numeric
+				for (size_t x = 0; x < args[argIndex].size(); x++)
+				{
+					if (args[argIndex][x] < '0' || args[argIndex][x] > '9')
+					{
+						sendResponse(fd, ":localhost 461 MODE :Not enough parameters\r\n");
+						return;
+					}
+				}
+
+				int limit = std::atoi(args[argIndex].c_str());
+				if (limit <= 0)
+				{
+					sendResponse(fd, ":localhost 461 MODE :Not enough parameters\r\n");
+					return;
+				}
+
+				channel->setUserLimit(limit);
+				appliedModes += 'l';
+				appliedArgs.push_back(args[argIndex]);
+				argIndex++;
+			}
+			else
+			{
+				channel->clearUserLimit();
+				appliedModes += 'l';
+			}
+		}
+		else
+		{
+			sendResponse(fd, ":localhost 472 " + client->getNickname() + " " + std::string(1, c) + " :is unknown mode char to me\r\n");
+			return;
+		}
+	}
+
+	if (appliedModes == "+" || appliedModes == "-" || appliedModes.empty())
+		return;
+
+	std::string msg = ":" + client->getNickname() + "!" + client->getUsername() + "@"
+		+ client->getIPAdress() + " MODE " + channelName + " " + appliedModes;
+
+	for (size_t j = 0; j < appliedArgs.size(); j++)
+		msg += " " + appliedArgs[j];
+
+	msg += "\r\n";
+	channel->broadcast(msg, -1);
+	sendResponse(fd, ":localhost 472 " + client->getNickname() + " " + modeStr + " :is unknown mode char to me\r\n");
 }

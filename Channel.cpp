@@ -6,17 +6,17 @@
 /*   By: ilsadi <ilsadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:03:31 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/08 17:07:28 by ilsadi           ###   ########.fr       */
+/*   Updated: 2026/01/08 21:49:17 by ilsadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Channel.hpp"
 
-Channel::Channel() : _name(""), _key("") {
+Channel::Channel() : _name(""), _key(""), _inviteOnly(false), _topicRestricted(false), _userLimit(0) {
 	std::cout << GREEN << "Default Channel constructor called" << NC << std::endl;
 }
 
-Channel::Channel(std::string name, std::string key, Client *admin) : _name(name), _key(key) {
+Channel::Channel(std::string name, std::string key, Client *admin) : _name(name), _key(key), _inviteOnly(false), _topicRestricted(false), _userLimit(0) {
 	std::cout << GREEN << "Channel constructor with parameters called" << NC << std::endl;
 	this->addClient(admin);
 	this->addOperator(admin);
@@ -151,4 +151,51 @@ void	Channel::setTopic(const std::string &topic)
 size_t Channel::getClientCount() const
 {
 	return _clients.size();
+}
+
+bool Channel::isInviteOnly() const
+{
+	return (_inviteOnly);
+}
+
+void Channel::setInviteOnly(bool value)
+{
+	_inviteOnly = value;
+}
+
+void Channel::removeOperator(int fd)
+{
+	for (std::vector<Client *>::iterator it = _operators.begin(); it != _operators.end(); ++it)
+	{
+		if ((*it)->getFd() == fd)
+		{
+			_operators.erase(it);
+			return ;
+		}
+	}
+}
+
+bool Channel::isTopicRestricted() const
+{
+	return _topicRestricted;
+}
+
+void Channel::setTopicRestricted(bool value)
+{
+	_topicRestricted = value;
+}
+
+int Channel::getUserLimit() const
+{
+	return _userLimit;
+}
+
+void Channel::setUserLimit(int limit)
+{
+	_userLimit = limit;
+}
+
+void Channel::clearUserLimit()
+{
+	_userLimit = 0;
 }

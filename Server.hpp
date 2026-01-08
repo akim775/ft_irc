@@ -6,7 +6,7 @@
 /*   By: ilsadi <ilsadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/03 14:53:30 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/07 10:53:27 by ilsadi           ###   ########.fr       */
+/*   Updated: 2026/01/08 17:45:05 by ilsadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,6 +60,7 @@ class Server {
 		void	cmd_kick(int fd, const std::vector<std::string> &args);
 		void	cmd_topic(int fd, const std::vector<std::string> &args);
 		void	cmd_invite(int fd, const std::vector<std::string> &args);
+		void	cmd_mode(int fd, const std::vector<std::string> &args);
 		Client *getClientByNickname(const std::string &nickname);
 		
 		std::map<std::string, void (Server::*)(int, const std::vector<std::string>&)> _cmds;

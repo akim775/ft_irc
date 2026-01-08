@@ -6,7 +6,7 @@
 /*   By: ilsadi <ilsadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:03:28 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/08 17:06:22 by ilsadi           ###   ########.fr       */
+/*   Updated: 2026/01/08 21:48:22 by ilsadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,9 @@ class Channel
 		std::set<std::string> _invited;
 		std::vector<Client *> _clients;
 		std::vector<Client *> _operators;
+		bool _inviteOnly;
+		bool	_topicRestricted;
+		int _userLimit;
 
 	public:
 		Channel();
@@ -44,12 +47,20 @@ class Channel
 
 		void	addClient(Client *newClient);
 		void	addOperator(Client *newAdmin);
+		void	removeOperator(int fd);
 		void	removeClient(int fd);
 		void	broadcast(const std::string &message, int excludeFd = -1);
 		bool	isMember(Client *client);
 		bool	isOperator(Client *client) const;
 		void	inviteNick(const std::string &nickname);
 		bool	isInvited(const std::string &nickname) const;
+		bool	isInviteOnly() const;
+		void	setInviteOnly(bool value);
 		void	revokeInvite(const std::string &nickname);
+		bool	isTopicRestricted() const;
+		void	setTopicRestricted(bool value);
+		int  getUserLimit() const;
+		void setUserLimit(int limit);
+		void clearUserLimit();
 	};
 #endif
