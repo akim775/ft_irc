@@ -6,7 +6,7 @@
 /*   By: ilsadi <ilsadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/03 12:01:18 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/07 20:29:01 by ilsadi           ###   ########.fr       */
+/*   Updated: 2026/01/08 17:12:34 by ilsadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,10 +27,7 @@ Server::Server(int port, std::string &password) : _port(port), _password(passwor
 	_cmds["KICK"] = &Server::cmd_kick;
 	_cmds["TOPIC"] = &Server::cmd_topic;
 	_cmds["INVITE"] = &Server::cmd_invite;
-	/*_cmds["KICK"] = &Server::cmd_kick;
-	_cmds["INVITE"] = &Server::cmd_invite;
-	_cmds["TOPIC"] = &Server::cmd_topic;
-	_cmds["MODE"] = &Server::cmd_mode;*/
+	/*_cmds["MODE"] = &Server::cmd_mode;*/
 }
 
 Server::~Server() {

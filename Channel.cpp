@@ -6,7 +6,7 @@
 /*   By: ilsadi <ilsadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:03:31 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/07 20:30:00 by ilsadi           ###   ########.fr       */
+/*   Updated: 2026/01/08 17:07:28 by ilsadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,7 +95,7 @@ bool Channel::isMember(Client *client) {
 	return false;
 }
 
-bool Channel::isOperator(Client *client)
+bool Channel::isOperator(Client *client) const
 {
 	for (size_t i = 0; i < _operators.size(); i++)
 	{
@@ -130,21 +130,18 @@ void	Channel::setKey(std::string key)
 	_key = key;
 }
 
-std::string Channel::getTopic() const {
-	return this->_topic;
-}
-
 std::vector<Client *> Channel::getClients() const {
 	return this->_clients;
 }
 
-bool Channel::isOperator(Client *client) const {
-	for (size_t i = 0; i < _operators.size(); i++) {
-		if (_operators[i] == client) {
-			return true;
-		}
-	}
-	return false;
+// bool Channel::isOperator(Client *client) const {
+// 	for (size_t i = 0; i < _operators.size(); i++) {
+// 		if (_operators[i] == client) {
+// 			return true;
+// 		}
+// 	}
+// 	return false;
+// }
 
 void	Channel::setTopic(const std::string &topic)
 {

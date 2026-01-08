@@ -6,7 +6,7 @@
 /*   By: ilsadi <ilsadi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:03:28 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/07 20:28:24 by ilsadi           ###   ########.fr       */
+/*   Updated: 2026/01/08 17:06:22 by ilsadi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,7 @@ class Channel
 		// Getters
 		std::string	getName();
 		std::string	getKey();
+		std::vector<Client *>	getClients() const;
 		size_t getClientCount() const;
 		std::string getTopic() const;
 		// Setters
@@ -46,7 +47,7 @@ class Channel
 		void	removeClient(int fd);
 		void	broadcast(const std::string &message, int excludeFd = -1);
 		bool	isMember(Client *client);
-		bool	isOperator(Client *client);
+		bool	isOperator(Client *client) const;
 		void	inviteNick(const std::string &nickname);
 		bool	isInvited(const std::string &nickname) const;
 		void	revokeInvite(const std::string &nickname);
