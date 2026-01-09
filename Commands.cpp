@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Commands.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ilsadi <ilsadi@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ahamini <ahamini@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 15:46:43 by ahamini           #+#    #+#             */
-/*   Updated: 2026/01/08 21:52:13 by ilsadi           ###   ########.fr       */
+/*   Updated: 2026/01/09 12:45:12 by ahamini          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -166,8 +166,10 @@ void	Server::cmd_join(int fd, const std::vector<std::string> &args) {
 
 		Channel *channel = getChannel(actualChannel);
 
-		if (channel && channel->isMember(client))
+		if (channel && channel->isMember(client)) {
+			sendResponse(fd, ":localhost 443 " + client->getNickname() + " " +actualChannel + " :is already on channel\r\n");
 			continue;
+		}
 		if (client->getNbChannels() > 10) {
 			std::string err = ":localhost 405 " + client->getNickname() + " " + actualChannel + " :You have joined too many channels\r\n";
 			sendResponse(fd, err);
@@ -207,17 +209,17 @@ void	Server::cmd_join(int fd, const std::vector<std::string> &args) {
 		else
 			sendResponse(fd, ":localhost 331 " + client->getNickname() + " " + actualChannel + " :No topic is set\r\n");
 		std::string userList = "";
-        std::vector<Client *> clientsInChan = channel->getClients(); 
-        for (size_t j = 0; j < clientsInChan.size(); j++) {
-            if (channel->isOperator(clientsInChan[j]))
-                userList += "@";
-            userList += clientsInChan[j]->getNickname();
-            if (j < clientsInChan.size() - 1)
-                userList += " ";
-        }
-        
-        sendResponse(fd, ":localhost 353 " + client->getNickname() + " = " + actualChannel + " :" + userList + "\r\n");
-        sendResponse(fd, ":localhost 366 " + client->getNickname() + " " + actualChannel + " :End of /NAMES list.\r\n");
+		std::vector<Client *> clientsInChan = channel->getClients(); 
+		for (size_t j = 0; j < clientsInChan.size(); j++) {
+			if (channel->isOperator(clientsInChan[j]))
+				userList += "@";
+			userList += clientsInChan[j]->getNickname();
+			if (j < clientsInChan.size() - 1)
+				userList += " ";
+		}
+		
+		sendResponse(fd, ":localhost 353 " + client->getNickname() + " = " + actualChannel + " :" + userList + "\r\n");
+		sendResponse(fd, ":localhost 366 " + client->getNickname() + " " + actualChannel + " :End of /NAMES list.\r\n");
 	}
 }
 
@@ -247,8 +249,12 @@ void	Server::cmd_prvmsg(int fd, const std::vector<std::string> &args) {
 
 	std::stringstream ss(clientList);
 	std::string clientTarget;
+	std::set<std::string> alreadySent;
 
 	while (std::getline(ss, clientTarget, ',')) {
+		if (alreadySent.count(clientTarget))
+			continue;
+		alreadySent.insert(clientTarget);
 		if (clientTarget[0] == '#' || clientTarget[0] == '&') {
 			Channel *chan = getChannel(clientTarget);
 
@@ -706,7 +712,7 @@ void Server::cmd_mode(int fd, const std::vector<std::string> &args)
 		if (channel->isInviteOnly())
 			modes += "i";
 		if (channel->isTopicRestricted())
-    		modes += "t";
+			modes += "t";
 		if (!channel->getKey().empty())
 			modes += "k";
 		if (channel->getUserLimit() > 0)
@@ -837,8 +843,7 @@ void Server::cmd_mode(int fd, const std::vector<std::string> &args)
 				appliedModes += 'l';
 			}
 		}
-		else
-		{
+		else {
 			sendResponse(fd, ":localhost 472 " + client->getNickname() + " " + std::string(1, c) + " :is unknown mode char to me\r\n");
 			return;
 		}
